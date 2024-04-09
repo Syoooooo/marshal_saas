@@ -1,12 +1,20 @@
 import prisma from "@/app/lib/db";
 import { getStripeSession, stripe } from "@/app/lib/stripe";
-import { StripePortal, StripeSubscriptionCreationButton } from "@/components/SubmitButtons";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  StripePortal,
+  StripeSubscriptionCreationButton,
+} from "@/components/SubmitButtons";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { CheckCircle2 } from "lucide-react";
 import { unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
-
 
 const featureItems = [
   { name: "Lorem Ipsum something" },
@@ -16,7 +24,7 @@ const featureItems = [
   { name: "Lorem Ipsum something" },
 ];
 async function getData(userId: string) {
-  noStore()
+  noStore();
   const data = await prisma.subscription.findUnique({
     where: {
       userId: userId,
@@ -56,7 +64,10 @@ const BillingPage = async () => {
 
     const subscriptionUrl = await getStripeSession({
       customerId: dbUser.stripeCustomerId,
-      domainUrl: "http://localhost:3000",
+      domainUrl:
+        process.env.NODE_ENV === "production"
+          ? (process.env.PRODUCTION_URL as string)
+          : "http://localhost:3000",
       priceId: process.env.STRIPE_PRICE_ID as string,
     });
 
@@ -64,15 +75,19 @@ const BillingPage = async () => {
   };
 
   const createCustomerPortal = async () => {
-    "use server"
-    const session = await stripe.billingPortal.sessions.create({
-      customer: data?.user.stripeCustomerId as string,
-      return_url: "http://localhost:3000/dashboard",
-    })
+    "use server";
+    const session =
+      await stripe.billingPortal.sessions.create({
+        customer: data?.user.stripeCustomerId as string,
+        return_url:
+          process.env.NODE_ENV === "production"
+            ? (process.env.PRODUCTION_URL as string)
+            : "http://localhost:3000",
+      });
 
-    return redirect(session.url)
-  }
-  
+    return redirect(session.url);
+  };
+
   if (data?.status === "active") {
     return (
       <div className="grid items-start gap-8">
@@ -90,9 +105,9 @@ const BillingPage = async () => {
           <CardHeader>
             <CardTitle>Edit Subscription</CardTitle>
             <CardDescription>
-              Click on the button below, this will give you the opportunity to
-              change your payment details and view your statement at the same
-              time.
+              Click on the button below, this will give you
+              the opportunity to change your payment details
+              and view your statement at the same time.
             </CardDescription>
           </CardHeader>
           <CardContent>
